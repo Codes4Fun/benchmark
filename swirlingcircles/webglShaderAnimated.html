@@ -1,0 +1,146 @@
+<html>
+<head>
+<title>Benchmark</title>
+<link rel="stylesheet" type="text/css" href="../benchmark.css"></head>
+<body>
+
+<script src="../js/dialog.js"></script>
+<script src="../js/bench.js"></script>
+<script src="../js/webgl.js"></script>
+
+<script type="x-shader/x-vertex" id="vsh">
+attribute vec4 pos;
+uniform float frame;
+uniform vec4 params;
+varying vec2 texCoord;
+void main()
+{
+	float time = frame * params.x + params.y;
+	gl_Position = vec4(pos.xy - vec2(sin(time),cos(time)) * params.zw, 0, 1);
+	texCoord = pos.zw;
+}
+</script>
+
+<script type="x-shader/x-fragment" id="fsh">
+precision mediump float;
+varying vec2 texCoord;
+void main()
+{
+	float l = length(texCoord);
+	if (l > 1.0)
+		discard;
+	if (l > 0.925)
+		gl_FragColor = vec4(0,0,0,1);
+	else
+		gl_FragColor = vec4(1,0,0,1);
+}
+</script>
+
+<script>
+function WebGLBench(maxComplexity)
+{
+	var count, hw, hh, r, s, x, y, p
+
+	var objects = []
+	for (var i = 0; i < maxComplexity; i++)
+	{
+		objects.push({
+			offset : Math.random() * 0.5 + 0.5,
+			phase : Math.random() * Math.PI * 2,
+			freq : Math.random() + 0.5,
+		})
+	}
+	gobjects = objects
+
+	var sp = createShaderProgram(
+		document.getElementById('vsh').text,
+		document.getElementById('fsh').text,
+		['pos'],
+		['frame', 'params'])
+
+	var texWidth = 40
+	var texHeight = 40
+
+	this.getMaxComplexity = function ()
+	{
+		return maxComplexity
+	}
+
+	var buffer = null
+
+	this.start = function ()
+	{
+		webglStart()
+
+		gl.viewport(0, 0, viewWidth, viewHeight);
+		gl.clearColor(1, 1, 1, 1);
+
+		count = 0
+		hw = viewWidth/2
+		hh = viewHeight/2
+		r = (hw < hh? hw : hh) - 80
+		s = 1000/60*0.4*Math.PI/1000
+
+		var pw = texWidth/hw
+		var ph = texWidth/hh
+		var vertices = new Float32Array([
+			-pw,  ph, -1, -1,
+			 pw,  ph, -1, 1,
+			 pw, -ph, 1, 1,
+			-pw, -ph, 1, -1,
+		]);
+		buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+		for (var i = 0; i < maxComplexity; i++)
+		{
+			var object = objects[i]
+			var offset = object.offset * r
+			object.shaderParams = new Float32Array([
+				s * object.freq, object.phase * object.freq,
+				offset/hw, offset/hh,
+			])
+		}
+	}
+
+	this.end = function ()
+	{
+		gl.deleteBuffer(buffer)
+		webglEnd()
+	}
+
+	this.updateComplexity = function (c)
+	{
+		count = c
+	}
+
+	this.updateFrame = function (frame)
+	{
+		gl.clear(gl.COLOR_BUFFER_BIT)
+
+		gl.useProgram(sp.sp);
+		gl.uniform1f(sp.u.frame, frame)
+		gl.enableVertexAttribArray(sp.a.pos);
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.vertexAttribPointer(sp.a.pos, 4, gl.FLOAT, false, 0, 0);
+
+		for (var i = 0; i < count; i++)
+		{
+			var object = objects[i]
+			
+			gl.uniform4fv(sp.u.params, object.shaderParams)
+			gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+		}
+	}
+}
+
+var bench = new WebGLBench(4096*4)
+
+function start()
+{
+	runBench(bench, 60)
+}
+</script>
+</body>
+</html>

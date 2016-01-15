@@ -1,0 +1,60 @@
+<html>
+<head><title>Swirling Circles benchmarks</title></head>
+<body>
+
+<h1><center>Swirling Circles benchmark</center></h1>
+<div style="width:630px;margin:auto">
+These benchmarks utilize different web APIs for drawing circles and swirling them around.<br>
+<br>
+The complexity of these benchmarks simple increase the number of circles drawn.<br>
+<br>
+These benchmarks use a framework I am working on that tries to find at what complexity a browser can sustain framerates at 120 fps, 60 fps and/or 30 fps.<br>
+<br>
+</div>
+
+<center>
+<table>
+<tbody>
+</tbody>
+</table>
+</center>
+
+<script>
+
+var tbody = document.querySelector('tbody');
+function addLink (file, title, howDrawn, howAnimated)
+{
+	//document.body.insertAdjacentHTML('beforeend', '<div><a href="' + file + '">' + title + '</a><div>'
+	//	+ howDrawn + '</div><div>' + howAnimated + '</div></div>');
+
+	tbody.insertAdjacentHTML('beforeend', '<tr><td><a href="' + file + '">' + title + '</a></td><td>'
+		+ howDrawn + '</td><td>' + howAnimated + '</td></tr>');
+}
+
+addLink('canvas.html', 'canvas', 'drawn with CanvasContext2D', 'animated with javascript');
+
+addLink('svg.html', 'svg', 'circles are svg objects', 'animated by javascript updating attributes');
+
+addLink('svgTransform.html', 'svg transform', 'circles are svg objects', 'animated by javascript updating transforms');
+
+addLink('svgTransformCSS.html', 'svg CSS transform', 'circles are svg objects', 'animated by javascript updating CSS transforms');
+
+addLink('webglVertices.html', 'webgl', 'drawn with vertex mesh', 'animated with a matrix');
+
+addLink('webglShader.html', 'webgl shader', 'drawn with rectangle and circle shader', 'animated with a matrix');
+
+addLink('webglShaderTrim.html', 'webgl shader', 'drawn with hexagon and circle shader (fillrate reduction)', 'animated with a matrix');
+
+addLink('webglShaderAnimated.html', 'webgl shader animated', 'drawn with rectangle and circle shader', 'animated in vertex shader');
+
+addLink('webglShaderAnimatedTrim.html', 'webgl shader animated', 'drawn with hexagon and circle shader (fillrate reduction)', 'animated in vertex shader');
+
+addLink('webglShaderAnimatedTri.html', 'webgl shader animated', 'drawn with triangle and circle shader (vertex reduction)', 'animated in vertex shader');
+
+addLink('webglSingleDraw.html', 'webgl in single call', 'drawn with triangle and circle shader in one call', 'animated in vertex shader, animation params as vertex attribute');
+
+
+</script>
+
+</body>
+</html>

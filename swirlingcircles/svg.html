@@ -1,0 +1,93 @@
+<html>
+<head>
+<title>Benchmark</title>
+<link rel="stylesheet" type="text/css" href="../benchmark.css"></head>
+<body>
+
+<script src="../js/dialog.js"></script>
+<script src="../js/bench.js"></script>
+<script src="../js/svg.js"></script>
+
+<script>
+function SVGBench(maxComplexity)
+{
+	var hw, hh, r, s, x, y, p
+
+	var visibleObjects = 0
+	var objects = []
+	for (var i = 0; i < maxComplexity; i++)
+	{
+		objects.push({
+			offset : Math.random() * 0.5 + 0.5,
+			phase : Math.random() * Math.PI * 2,
+			freq : Math.random() + 0.5,
+			shape : createSVGElement('circle', { cx : 0, cy : 0, r : 40, stroke : 'black', 'stroke-width' : 3, fill : 'red' }),
+		})
+	}
+	
+	this.getMaxComplexity = function ()
+	{
+		return maxComplexity
+	}
+
+	this.start = function ()
+	{
+		svgStart()
+
+		hw = viewWidth/2
+		hh = viewHeight/2
+		r = (hw < hh? hw : hh) - 80
+		s = 1000/60*0.4*Math.PI/1000
+	}
+
+	this.end = function ()
+	{
+		svgEnd()
+	}
+
+	this.updateComplexity = function (c)
+	{
+		if (c > visibleObjects)
+		{
+			for (var i = visibleObjects; i < c; i++)
+			{
+				svg.appendChild(objects[i].shape)
+			}
+		}
+		else
+		{
+			for (var i = c; i < visibleObjects; i++)
+			{
+				svg.removeChild(objects[i].shape)
+			}
+		}
+		visibleObjects = c
+	}
+
+	this.updateFrame = function (frame)
+	{
+		for (var i = 0; i < visibleObjects; i++)
+		{
+			var object = objects[i]
+			p = (frame * s + object.phase) * object.freq
+			x = hw - Math.sin(p) * r * object.offset
+			y = hh - Math.cos(p) * r * object.offset
+
+			object.shape.setAttribute('cx', x)
+			object.shape.setAttribute('cy', y)
+		}
+	}
+}
+
+var bench = new SVGBench(1024)
+
+function start()
+{
+	runBench(bench, 60)
+}
+</script>
+</body>
+</html>
+
+
+

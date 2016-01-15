@@ -1,0 +1,210 @@
+<html>
+<head>
+<title>Benchmark</title>
+<link rel="stylesheet" type="text/css" href="../benchmark.css"></head>
+<body>
+
+<script src="../js/dialog.js"></script>
+<script src="../js/bench.js"></script>
+<script src="../js/webgl.js"></script>
+
+<script type="x-shader/x-vertex" id="vsh">
+attribute vec4 pos;
+attribute vec4 params;
+uniform float frame;
+varying vec2 texCoord;
+void main()
+{
+	float time = frame * params.x + params.y;
+	gl_Position = vec4(pos.xy - vec2(sin(time),cos(time)) * params.zw, 0, 1);
+	texCoord = pos.zw;
+}
+</script>
+
+<script type="x-shader/x-fragment" id="fsh">
+precision mediump float;
+varying vec2 texCoord;
+void main()
+{
+	float l = length(texCoord);
+	if (l > 1.0)
+		discard;
+	if (l > 0.925)
+		gl_FragColor = vec4(0,0,0,1);
+	else
+		gl_FragColor = vec4(1,0,0,1);
+}
+</script>
+
+<script>
+function WebGLBench(maxComplexity)
+{
+	var count, hw, hh, r, s, x, y, p
+
+
+	this.objects = []
+	this.maxComplexity = 0;
+	
+	this.setMaxComplexity = function (max)
+	{
+		this.maxComplexity = max;
+		this.objects = [];
+		for (var i = 0; i < this.maxComplexity; i++)
+		{
+			this.objects.push({
+				offset : Math.random() * 0.5 + 0.5,
+				phase : Math.random() * Math.PI * 2,
+				freq : Math.random() + 0.5,
+			})
+		}
+	}
+	this.setMaxComplexity(maxComplexity);
+	gobjects = this.objects
+
+	var sp = createShaderProgram(
+		document.getElementById('vsh').text,
+		document.getElementById('fsh').text,
+		['pos', 'params'],
+		['frame', 'params'])
+
+	var texWidth = 40
+	var texHeight = 40
+
+	this.getMaxComplexity = function ()
+	{
+		return this.maxComplexity;
+	}
+
+	var positionBuffer = null;
+	var paramBuffer = null;
+
+	this.start = function ()
+	{
+		webglStart()
+
+		gl.viewport(0, 0, viewWidth, viewHeight);
+		gl.clearColor(1, 1, 1, 1);
+
+		count = 0
+		hw = viewWidth/2
+		hh = viewHeight/2
+		r = (hw < hh? hw : hh) - 80
+		s = 1000/60*0.4*Math.PI/1000
+
+		var d2r = Math.PI/180;
+		var sx = Math.cos(60*d2r);
+		var sy = Math.sin(60*d2r);
+		var isx = sy;
+		var isy = sx;
+		var a = sx / sy; // slope
+		var b = -isx - a * isy;
+		var lx = -1 * a + b;
+		var ly = -1;
+		var tx = 0;
+		var ty = Math.sqrt(lx * lx + ly * ly);
+		var rx = -lx;
+		var ry = ly;
+
+		var pw = texWidth/hw
+		var ph = texWidth/hh
+
+		var vertices = new Float32Array(this.maxComplexity * 3*4);
+		var params = new Float32Array(this.maxComplexity * 3*4);
+
+		for (var i = 0, b = 0; i < this.maxComplexity; i++, b+=3*4)
+		{
+			vertices[b + 0] = lx * pw;
+			vertices[b + 1] = ly * ph;
+			vertices[b + 2] = lx;
+			vertices[b + 3] = ly;
+			
+			vertices[b + 4] = tx * pw;
+			vertices[b + 5] = ty * ph;
+			vertices[b + 6] = tx;
+			vertices[b + 7] = ty;
+			
+			vertices[b + 8] = rx * pw;
+			vertices[b + 9] = ry * ph;
+			vertices[b +10] = rx;
+			vertices[b +11] = ry;
+
+			var object = this.objects[i];
+			var offset = object.offset * r;
+			var p0 = s * object.freq;
+			var p1 = object.phase * object.freq;
+			var p2 = offset/hw;
+			var p3 = offset/hh;
+
+			params[b + 0] = p0;
+			params[b + 1] = p1;
+			params[b + 2] = p2;
+			params[b + 3] = p3;
+
+			params[b + 4] = p0;
+			params[b + 5] = p1;
+			params[b + 6] = p2;
+			params[b + 7] = p3;
+
+			params[b + 8] = p0;
+			params[b + 9] = p1;
+			params[b +10] = p2;
+			params[b +11] = p3;
+		}
+
+		positionBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+		paramBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, paramBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, params, gl.STATIC_DRAW);
+	}
+
+	this.end = function ()
+	{
+		gl.deleteBuffer(positionBuffer)
+		webglEnd()
+	}
+
+	this.updateComplexity = function (c)
+	{
+		count = c
+	}
+
+	this.updateFrame = function (frame)
+	{
+		gl.clear(gl.COLOR_BUFFER_BIT)
+
+		gl.useProgram(sp.sp);
+		gl.uniform1f(sp.u.frame, frame)
+		gl.enableVertexAttribArray(sp.a.pos);
+		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+		gl.vertexAttribPointer(sp.a.pos, 4, gl.FLOAT, false, 0, 0);
+		gl.enableVertexAttribArray(sp.a.params);
+		gl.bindBuffer(gl.ARRAY_BUFFER, paramBuffer);
+		gl.vertexAttribPointer(sp.a.params, 4, gl.FLOAT, false, 0, 0);
+
+		gl.drawArrays(gl.TRIANGLES, 0, count * 3);
+	}
+}
+
+complexityDiv.style.display = 'block';
+complexityInput.value = '4096';
+
+var bench = new WebGLBench(4096)
+
+function start()
+{
+	var complexity = parseInt(complexityInput.value);
+	if (!isNaN(complexity))
+	{
+		if (complexity != bench.getMaxComplexity())
+		{
+			bench.setMaxComplexity(complexity);
+		}
+	}
+	runBench(bench, 60)
+}
+</script>
+</body>
+</html>
