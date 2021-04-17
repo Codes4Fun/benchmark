@@ -9,9 +9,9 @@ The current concept is that the framework adds and removes complexity and tries 
 
 It uses a state machine with the following nodes:
 
-InitialState - sets complexity to 1 and looks at framerate and creates a ramping states.
-RampState - doubles complexity each iteration until it passes a target framerate, then it creates a find state with the two complexities that cross the target.
-FindState - searches between two ranges for the complexity that is at a target framerate.
+* InitialState - sets complexity to 1 and looks at framerate and creates ramping states.
+* RampState - doubles complexity each iteration until it passes a target framerate, then it creates a find state with the two complexities that cross the target.
+* FindState - searches between two ranges for the complexity that is at a target framerate.
 
 If your framerate is high enough, you will have simultanious RampStates and FindStates for 30 and 60 and the maximum fps.
 
