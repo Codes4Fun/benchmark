@@ -1,7 +1,9 @@
 
 # benchmark framework
 
-This is a benchmark framework I am developing.
+This is a demo of a benchmark framework, it can be seen here:
+
+http://codes4fun.github.io/benchmark/swirlingcircles/
 
 ## current design
 
